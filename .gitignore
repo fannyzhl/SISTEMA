@@ -1,0 +1,5 @@
+*.svg
+*.png
+*.gcode
+*.orig
+__pycache__
