@@ -429,16 +429,16 @@ def main():
 
 if __name__ == "__main__":
     try:
-        # main()
-        image = Image.open(fp="image.png", formats=["PNG"])
-        convertPngToSvg(
-            image,
-            "image.svg",
-            MAX_WIDTH_MM,
-            MAX_HEIGHT_MM,
-            OFFSET_X_MM,
-            OFFSEY_Y_MM,
-        )
-        convertSvgToGcode("image.svg", "image.gcode")
+        main()
+    # image = Image.open(fp="image.png", formats=["PNG"])
+    # convertPngToSvg(
+    #     image,
+    #     "image.svg",
+    #     MAX_WIDTH_MM,
+    #    MAX_HEIGHT_MM,
+    #     OFFSET_X_MM,
+    #     OFFSEY_Y_MM,
+    # )
+    # convertSvgToGcode("image.svg", "image.gcode")
     except KeyboardInterrupt:
         pass
