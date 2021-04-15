@@ -339,35 +339,32 @@ def makesvg(
     resolution_x,
     resolution_y,
 ):
-    # width = math.ceil(max([max([p[0] for p in l]) for l in lines]))
-    # height = math.ceil(max([max([p[1] for p in l]) for l in lines]))
-
     max_width = float(offset_x_mm + draw_size_x)
     max_height = float(offset_y_mm + draw_size_y)
-
-    out = f'<svg xmlns="http://www.w3.org/2000/svg" height="{max_height:.1f}" width="{max_width:.1f}" version="1.1">\n'
-
+    out = (
+        f'<svg xmlns="http://www.w3.org/2000/svg" height="{max_height:.1f}" '
+        f'width="{max_width:.1f}" version="1.1">\n'
+    )
     for l in lines:
         cur_line = []
-
         for i in range(len(l)):
             p = l[i]
-            # x = offset_x_mm + valmap(p[0], 0, width, 0, draw_size_x)
-            # y = offset_y_mm + valmap(p[1], 0, height, 0, draw_size_y)
             x = offset_x_mm + p[0] / resolution_x
             y = offset_y_mm + p[1] / resolution_y
             cur_line.append(("M" if (i == 0) else "L") + (f"{x:.1f} {y:.1f}"))
-
         l = " ".join(cur_line)
         out += f'<path d="{l}" stroke="black" stroke-width="1" fill="none" />\n'
-
     out += "</svg>"
-
     return out
 
 
 def convertPngToSvg(
-    image, svg_path, max_width_mm, max_height_mm, offset_x_mm, offset_y_mm
+    image,
+    svg_path,
+    max_width_mm,
+    max_height_mm,
+    offset_x_mm,
+    offset_y_mm,
 ):
     draw_size_x = max_width_mm - offset_x_mm
     draw_size_y = max_height_mm - offset_y_mm
@@ -384,12 +381,11 @@ def convertPngToSvg(
             new_image = bg
         else:
             new_image = image
-
         lines = vectorise(
             new_image.convert("RGB"),
-            # resolution=resolution,
-            draw_contours=0.5,
-            repeat_contours=1,
+            resolution=800,
+            draw_contours=10,
+            repeat_contours=5,
             draw_hatch=0,
             repeat_hatch=0,
         )
@@ -402,7 +398,6 @@ def convertPngToSvg(
             resolution_x,
             resolution_y,
         )
-
         with open(svg_path, "w") as svg_file:
             svg_file.write(svg_data)
     except:
@@ -493,7 +488,3 @@ def convertSvgToGcode(svg_path, gcode_path):
         return False
 
     return True
-
-
-if __name__ == "__main__":
-    convertSvgToGcode("rombo.svg", "rombo.gcode")
