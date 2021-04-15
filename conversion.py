@@ -12,29 +12,77 @@ try:
     import numpy as np
     import cv2
 except:
-    print('OpenCV no disponible.')
+    print("OpenCV no disponible.")
     no_cv = True
 
 F_Blur = {
-    (-2,-2):2,(-1,-2):4,(0,-2):5,(1,-2):4,(2,-2):2,
-    (-2,-1):4,(-1,-1):9,(0,-1):12,(1,-1):9,(2,-1):4,
-    (-2,0):5,(-1,0):12,(0,0):15,(1,0):12,(2,0):5,
-    (-2,1):4,(-1,1):9,(0,1):12,(1,1):9,(2,1):4,
-    (-2,2):2,(-1,2):4,(0,2):5,(1,2):4,(2,2):2,
+    (-2, -2): 2,
+    (-1, -2): 4,
+    (0, -2): 5,
+    (1, -2): 4,
+    (2, -2): 2,
+    (-2, -1): 4,
+    (-1, -1): 9,
+    (0, -1): 12,
+    (1, -1): 9,
+    (2, -1): 4,
+    (-2, 0): 5,
+    (-1, 0): 12,
+    (0, 0): 15,
+    (1, 0): 12,
+    (2, 0): 5,
+    (-2, 1): 4,
+    (-1, 1): 9,
+    (0, 1): 12,
+    (1, 1): 9,
+    (2, 1): 4,
+    (-2, 2): 2,
+    (-1, 2): 4,
+    (0, 2): 5,
+    (1, 2): 4,
+    (2, 2): 2,
 }
 
-F_SobelX = {(-1,-1):1,(0,-1):0,(1,-1):-1,(-1,0):2,(0,0):0,(1,0):-2,(-1,1):1,(0,1):0,(1,1):-1}
+F_SobelX = {
+    (-1, -1): 1,
+    (0, -1): 0,
+    (1, -1): -1,
+    (-1, 0): 2,
+    (0, 0): 0,
+    (1, 0): -2,
+    (-1, 1): 1,
+    (0, 1): 0,
+    (1, 1): -1,
+}
 
-F_SobelY = {(-1,-1):1,(0,-1):2,(1,-1):1,(-1,0):0,(0,0):0,(1,0):0,(-1,1):-1,(0,1):-2,(1,1):-1}
+F_SobelY = {
+    (-1, -1): 1,
+    (0, -1): 2,
+    (1, -1): 1,
+    (-1, 0): 0,
+    (0, 0): 0,
+    (1, 0): 0,
+    (-1, 1): -1,
+    (0, 1): -2,
+    (1, 1): -1,
+}
+
 
 def distsum(*args):
-    return sum([ ((args[i][0]-args[i-1][0])**2 + (args[i][1]-args[i-1][1])**2)**0.5 for i in range(1,len(args))])
+    return sum(
+        [
+            ((args[i][0] - args[i - 1][0]) ** 2 + (args[i][1] - args[i - 1][1]) ** 2)
+            ** 0.5
+            for i in range(1, len(args))
+        ]
+    )
+
 
 def appmask(IM, masks):
     PX = IM.load()
     w, h = IM.size
     NPX = {}
-    for x in range(0,w):
+    for x in range(0, w):
         for y in range(0, h):
             a = [0] * len(masks)
             for i in range(len(masks)):
@@ -48,9 +96,10 @@ def appmask(IM, masks):
         for y in range(0, h):
             PX[x, y] = NPX[x, y]
 
+
 def find_edges(image):
     if no_cv:
-        #appmask(IM, [F_Blur])
+        # appmask(IM, [F_Blur])
         appmask(image, [F_SobelX, F_SobelY])
     else:
         im = np.array(image)
@@ -58,6 +107,7 @@ def find_edges(image):
         im = cv2.Canny(im, 100, 200)
         image = Image.fromarray(im)
     return image.point(lambda p: p > 128 and 255)
+
 
 def getdots(IM):
     PX = IM.load()
@@ -77,6 +127,7 @@ def getdots(IM):
         dots.append(row)
     return dots
 
+
 def connectdots(dots):
     contours = []
     for y in range(len(dots)):
@@ -87,7 +138,7 @@ def connectdots(dots):
                 else:
                     closest = -1
                     cdist = 100
-                    for x0, v0 in dots[y-1]:
+                    for x0, v0 in dots[y - 1]:
                         if abs(x0 - x) < cdist:
                             cdist = abs(x0 - x)
                             closest = x0
@@ -98,7 +149,12 @@ def connectdots(dots):
                         found = 0
                         for i in range(len(contours)):
                             if contours[i][-1] == (closest, y - 1):
-                                contours[i].append((x, y,))
+                                contours[i].append(
+                                    (
+                                        x,
+                                        y,
+                                    )
+                                )
                                 found = 1
                                 break
                         if found == 0:
@@ -107,6 +163,7 @@ def connectdots(dots):
             if c[-1][1] < y - 1 and len(c) < 4:
                 contours.remove(c)
     return contours
+
 
 def getcontours(image, draw_contours=2):
     image = find_edges(image)
@@ -118,9 +175,9 @@ def getcontours(image, draw_contours=2):
     contours2 = connectdots(dots2)
 
     for i in range(len(contours2)):
-        contours2[i] = [(c[1],c[0]) for c in contours2[i]]
+        contours2[i] = [(c[1], c[0]) for c in contours2[i]]
 
-    contours = contours1+contours2
+    contours = contours1 + contours2
 
     for i in range(len(contours)):
         for j in range(len(contours)):
@@ -135,9 +192,12 @@ def getcontours(image, draw_contours=2):
     contours = [c for c in contours if len(c) > 1]
 
     for i in range(0, len(contours)):
-        contours[i] = [(v[0] * draw_contours, v[1] * draw_contours) for v in contours[i]]
+        contours[i] = [
+            (v[0] * draw_contours, v[1] * draw_contours) for v in contours[i]
+        ]
 
     return contours
+
 
 def hatch(image, draw_hatch=16):
     pixels = image.load()
@@ -153,13 +213,24 @@ def hatch(image, draw_hatch=16):
             if pixels[x0, y0] > 144:
                 pass
             elif pixels[x0, y0] > 64:
-                lg1.append([(x, y + draw_hatch / 4), (x + draw_hatch, y + draw_hatch / 4)])
+                lg1.append(
+                    [(x, y + draw_hatch / 4), (x + draw_hatch, y + draw_hatch / 4)]
+                )
             elif pixels[x0, y0] > 16:
-                lg1.append([(x, y + draw_hatch / 4), (x + draw_hatch, y + draw_hatch / 4)])
+                lg1.append(
+                    [(x, y + draw_hatch / 4), (x + draw_hatch, y + draw_hatch / 4)]
+                )
                 lg2.append([(x + draw_hatch, y), (x, y + draw_hatch)])
             else:
-                lg1.append([(x, y + draw_hatch / 4), (x + draw_hatch, y + draw_hatch / 4)])
-                lg1.append([(x, y + draw_hatch / 2 + draw_hatch / 4), (x + draw_hatch, y + draw_hatch / 2 + draw_hatch / 4)])
+                lg1.append(
+                    [(x, y + draw_hatch / 4), (x + draw_hatch, y + draw_hatch / 4)]
+                )
+                lg1.append(
+                    [
+                        (x, y + draw_hatch / 2 + draw_hatch / 4),
+                        (x + draw_hatch, y + draw_hatch / 2 + draw_hatch / 4),
+                    ]
+                )
                 lg2.append([(x + draw_hatch, y), (x, y + draw_hatch)])
 
     line_groups = [lg1, lg2]
@@ -179,6 +250,7 @@ def hatch(image, draw_hatch=16):
     lines = [item for group in line_groups for item in group]
 
     return lines
+
 
 def sortlines(lines):
     clines = lines[:]
@@ -204,24 +276,50 @@ def sortlines(lines):
 
     return slines
 
-def vectorise(image, resolution=1024, draw_contours=False, repeat_contours=1, draw_hatch=False, repeat_hatch=1):
+
+def vectorise(
+    image,
+    resolution=1024,
+    draw_contours=False,
+    repeat_contours=1,
+    draw_hatch=False,
+    repeat_hatch=1,
+):
     w, h = image.size
-    mod_image = image.convert('L')
+    mod_image = image.convert("L")
     mod_image = ImageOps.autocontrast(mod_image, 10)
 
     lines = []
 
     if draw_contours and repeat_contours:
-        contours = sortlines(getcontours(mod_image.resize((int(resolution / draw_contours), int(resolution / draw_contours * h / w))), draw_contours))
+        contours = sortlines(
+            getcontours(
+                mod_image.resize(
+                    (
+                        int(resolution / draw_contours),
+                        int(resolution / draw_contours * h / w),
+                    )
+                ),
+                draw_contours,
+            )
+        )
         for r in range(repeat_contours):
             lines += contours
 
     if draw_hatch and repeat_hatch:
-        hatches = sortlines(hatch(mod_image.resize((int(resolution / draw_hatch), int(resolution / draw_hatch * h / w))), draw_hatch))
+        hatches = sortlines(
+            hatch(
+                mod_image.resize(
+                    (int(resolution / draw_hatch), int(resolution / draw_hatch * h / w))
+                ),
+                draw_hatch,
+            )
+        )
         for r in range(repeat_hatch):
             lines += hatches
 
     return lines
+
 
 def valmap(x, in_min, in_max, out_min, out_max):
     x = float(x)
@@ -231,43 +329,79 @@ def valmap(x, in_min, in_max, out_min, out_max):
     out_max = float(out_max)
     return ((x - in_min) * (out_max - out_min)) / ((in_max - in_min) + out_min)
 
-def makesvg(lines, max_width_mm, max_height_mm, offset_x_mm, offset_y_mm):
-    width = math.ceil(max([max([p[0] for p in l]) for l in lines]))
-    height = math.ceil(max([max([p[1] for p in l]) for l in lines]))
 
-    max_width = float(offset_x_mm + max_width_mm)
-    max_height = float(offset_y_mm + max_height_mm)
+def makesvg(
+    lines,
+    draw_size_x,
+    draw_size_y,
+    offset_x_mm,
+    offset_y_mm,
+    resolution_x,
+    resolution_y,
+):
+    # width = math.ceil(max([max([p[0] for p in l]) for l in lines]))
+    # height = math.ceil(max([max([p[1] for p in l]) for l in lines]))
 
-    out = '<svg xmlns="http://www.w3.org/2000/svg" height="%.1fmm" width="%.1fmm" version="1.1">\n' % (max_height, max_width)
+    max_width = float(offset_x_mm + draw_size_x)
+    max_height = float(offset_y_mm + draw_size_y)
+
+    out = f'<svg xmlns="http://www.w3.org/2000/svg" height="{max_height:.1f}" width="{max_width:.1f}" version="1.1">\n'
 
     for l in lines:
         cur_line = []
 
         for i in range(len(l)):
             p = l[i]
-            x = offset_x_mm + valmap(p[0], 0, width, 0, max_width_mm)
-            y = offset_y_mm + valmap(p[1], 0, height, 0, max_height_mm)
-            cur_line.append(('M' if (i == 0) else 'L') + ("%.1f %.1f" % (round(x, 1), round(y, 1))))
+            # x = offset_x_mm + valmap(p[0], 0, width, 0, draw_size_x)
+            # y = offset_y_mm + valmap(p[1], 0, height, 0, draw_size_y)
+            x = offset_x_mm + p[0] / resolution_x
+            y = offset_y_mm + p[1] / resolution_y
+            cur_line.append(("M" if (i == 0) else "L") + (f"{x:.1f} {y:.1f}"))
 
         l = " ".join(cur_line)
-        out += '<path d="' + l + '" stroke="black" stroke-width="1" fill="none" />\n'
+        out += f'<path d="{l}" stroke="black" stroke-width="1" fill="none" />\n'
 
-    out += '</svg>'
+    out += "</svg>"
 
     return out
 
-def convertPngToSvg(image, svg_path, max_width_mm, max_height_mm, offset_x_mm, offset_y_mm):
+
+def convertPngToSvg(
+    image, svg_path, max_width_mm, max_height_mm, offset_x_mm, offset_y_mm
+):
+    draw_size_x = max_width_mm - offset_x_mm
+    draw_size_y = max_height_mm - offset_y_mm
+    width, height = image.size
+    resolution_x = width / draw_size_x
+    resolution_y = height / draw_size_x
     try:
-        if (image.mode in ('RGBA', 'LA')) or ((image.mode == 'P') and ('transparency' in image.info)):
-            alpha = image.convert('RGBA').getchannel('A')
-            bg = Image.new('RGBA', image.size, (255, 255, 255, 255))
+        if (image.mode in ("RGBA", "LA")) or (
+            (image.mode == "P") and ("transparency" in image.info)
+        ):
+            alpha = image.convert("RGBA").getchannel("A")
+            bg = Image.new("RGBA", image.size, (255, 255, 255, 255))
             bg.paste(image, mask=alpha)
             new_image = bg
         else:
             new_image = image
 
-        lines = vectorise(new_image.convert('RGB'), draw_contours=0.5, repeat_contours=5, draw_hatch=0, repeat_hatch=0)
-        svg_data = makesvg(lines, max_width_mm, max_height_mm, offset_x_mm, offset_y_mm)
+        lines = vectorise(
+            new_image.convert("RGB"),
+            # resolution=resolution,
+            draw_contours=0.5,
+            repeat_contours=1,
+            draw_hatch=0,
+            repeat_hatch=0,
+        )
+        svg_data = makesvg(
+            lines,
+            draw_size_x,
+            draw_size_y,
+            offset_x_mm,
+            offset_y_mm,
+            resolution_x,
+            resolution_y,
+        )
 
         with open(svg_path, "w") as svg_file:
             svg_file.write(svg_data)
@@ -276,6 +410,7 @@ def convertPngToSvg(image, svg_path, max_width_mm, max_height_mm, offset_x_mm, o
         return False
 
     return True
+
 
 def fixGcode(gcode_path):
     with open(gcode_path, "r") as gcode_file:
@@ -293,30 +428,31 @@ def fixGcode(gcode_path):
 
     for i in range(top):
         line = lines[i]
-        gcode_cmd = line.split()[0].lower().strip(';')
+        gcode_cmd = line.split()[0].lower().strip(";")
         line_to_save = None
 
-        if gcode_cmd == 'g0' or gcode_cmd == 'g1':
+        if gcode_cmd == "g0" or gcode_cmd == "g1":
             prev_line = line
             if (i + 1) == top:
                 line_to_save = prev_line
                 prev_line = None
-        elif gcode_cmd == 'g90' or gcode_cmd == 'g91':
+        elif gcode_cmd == "g90" or gcode_cmd == "g91":
             line_to_save = line
-        elif gcode_cmd == 'm3':
+        elif gcode_cmd == "m3":
             line_to_save = prev_line
             prev_line = None
 
-        if not line_to_save: continue
+        if not line_to_save:
+            continue
 
         line_elements = line_to_save.split()
-        gcode_cmd = line_elements[0].lower().strip(';')
+        gcode_cmd = line_elements[0].lower().strip(";")
 
-        if gcode_cmd == 'g0' or gcode_cmd == 'g1':
+        if gcode_cmd == "g0" or gcode_cmd == "g1":
             line_to_save = ()
 
             for j in range(len(line_elements)):
-                mov_arg = line_elements[j].strip(';')
+                mov_arg = line_elements[j].strip(";")
 
                 if j == 0:
                     line_to_save += (mov_arg,)
@@ -324,29 +460,40 @@ def fixGcode(gcode_path):
 
                 type = mov_arg[0].lower()
 
-                if type == 'x' or type == 'y':
+                if type == "x" or type == "y":
                     mov_arg = "%c%.1f" % (type.upper(), float(mov_arg[1:]))
-                elif type == 'f':
+                elif type == "f":
                     continue
 
                 line_to_save += (mov_arg,)
 
-            line_to_save = ' '.join(line_to_save) + ';\n'
+            line_to_save = " ".join(line_to_save) + ";\n"
 
         new_lines.append(line_to_save)
 
     with open(gcode_path, "w") as gcode_file:
         gcode_file.writelines(new_lines)
 
+
 def convertSvgToGcode(svg_path, gcode_path):
     try:
-        gcode_compiler = Compiler(interfaces.Gcode, movement_speed=1000, cutting_speed=300, pass_depth=0, unit='mm')
-        curves = parse_file(svg_path, transform_origin=False)
+        gcode_compiler = Compiler(
+            interfaces.Gcode,
+            movement_speed=100,
+            cutting_speed=100,
+            pass_depth=0,
+            unit="mm",
+        )
+        curves = parse_file(svg_path, transform_origin=True)
         gcode_compiler.append_curves(curves)
         gcode_compiler.compile_to_file(gcode_path)
-        fixGcode(gcode_path)
+        # fixGcode(gcode_path)
     except:
         traceback.print_exc()
         return False
 
     return True
+
+
+if __name__ == "__main__":
+    convertSvgToGcode("rombo.svg", "rombo.gcode")
