@@ -4,6 +4,8 @@ typedef struct
 {
   Servo *servo;
   int pin;
+  int ajust_0;
+  int ajust_90;
   int min_pulse_width;
   int max_pulse_width;
   double multiplier;
@@ -28,12 +30,43 @@ void setup()
   while (!Serial)
     ;
   /* Inicializar servos. */
-  servoInitialize(&g_shoulderServoInfo, &g_shoulderServo, 2, 600, 2400);
-  servoInitialize(&g_elbowServoInfo, &g_elbowServo, 3, 600, 2400);
+  servoInitialize(&g_shoulderServoInfo, &g_shoulderServo, 2, 600, 2400, 40, 130);
+  servoInitialize(&g_elbowServoInfo, &g_elbowServo, 3, 600, 2400, 190, 100);
   /* Establecer servos en la posición base. */
   char gcode_cmd[32] = {0};
-  sprintf(gcode_cmd, "G1 X%.2f Y%.2f;", g_innerArmLength, g_outerArmLength);
-  gcodeProcessCommand(gcode_cmd);
+  // sprintf(gcode_cmd, "G1 X%.2f Y%.2f;", g_innerArmLength, g_outerArmLength);
+  // gcodeProcessCommand(gcode_cmd);
+  // Serial.print("shoulder: ");
+  // Serial.println(g_shoulderServoInfo.pin);
+  // Serial.print("elbow: ");
+  // Serial.println(g_elbowServoInfo.pin);
+  servoMove(&g_elbowServoInfo, 0);
+  servoMove(&g_shoulderServoInfo, 0);
+  delay(3000);
+  servoMove(&g_shoulderServoInfo, -30);
+  delay(1000);
+  servoMove(&g_shoulderServoInfo, 0);
+  delay(1000);
+  servoMove(&g_shoulderServoInfo, 90);
+  delay(1000);
+  servoMove(&g_shoulderServoInfo, -30);
+  delay(1000);
+  servoMove(&g_shoulderServoInfo, 0);
+  delay(1000);
+  servoMove(&g_shoulderServoInfo, 90);
+  delay(1000);
+  // servoMove(&g_elbowServoInfo, 0);
+  // delay(1000);
+  // servoMove(&g_elbowServoInfo, 90);
+  // delay(1000);
+  // servoMove(&g_elbowServoInfo, 180);
+  // delay(1000);
+  // servoMove(&g_elbowServoInfo, 0);
+  // delay(1000);
+  // servoMove(&g_elbowServoInfo, 90);
+  // delay(1000);
+  // servoMove(&g_elbowServoInfo, 180);
+  // delay(1000);
 }
 
 void loop()
@@ -49,7 +82,7 @@ void loop()
   delay(100);
 }
 
-void servoInitialize(ServoInfo *servo_info, Servo *servo, int pin, int min_pulse_width, int max_pulse_width)
+void servoInitialize(ServoInfo *servo_info, Servo *servo, int pin, int min_pulse_width, int max_pulse_width, int ajust_0, int ajust_90)
 {
   if (!servo_info || !servo)
     return;
@@ -58,15 +91,19 @@ void servoInitialize(ServoInfo *servo_info, Servo *servo, int pin, int min_pulse
   servo_info->servo->attach(pin, min_pulse_width, max_pulse_width);
   servo_info->pin = pin;
   servo_info->min_pulse_width = min_pulse_width;
-  servo_info->max_pulse_width = min_pulse_width;
+  servo_info->max_pulse_width = max_pulse_width;
   servo_info->multiplier = ((double)(max_pulse_width - min_pulse_width) / 180.0);
+  servo_info->pin = pin;
+  servo_info->ajust_0 = ajust_0;
+  servo_info->ajust_90 = ajust_90;
 }
 
 void servoMove(ServoInfo *servo_info, double angle)
 {
   if (!servo_info || !servo_info->servo)
     return;
-  int usec = (int)((angle * servo_info->multiplier) + (double)servo_info->min_pulse_width);
+  double r_angle = map(angle, 0, 90, servo_info->ajust_0, servo_info->ajust_90);
+  int usec = (int)((r_angle * servo_info->multiplier) + (double)servo_info->min_pulse_width);
   servo_info->servo->writeMicroseconds(usec);
 }
 
@@ -113,15 +150,11 @@ void gcodeConvertCoordsToAngles(double x, double y, double *shoulder, double *el
   // Serial.print(d_y_angle);
   // Serial.println(" rad");
 
-  // Serial.print("inner_y_angle: ");
-  // Serial.print(inner_y_angle);
-  // Serial.print(" rad, shoulder_angle: ");
+  // Serial.print("shoulder_angle: ");
   // Serial.print(shoulder_angle);
   // Serial.println(" deg");
 
-  // Serial.print("inner_outer_angle: ");
-  // Serial.print(inner_outer_angle);
-  // Serial.print(" rad, elbow_angle: ");
+  // Serial.print("elbow_angle: ");
   // Serial.print(elbow_angle);
   // Serial.println(" deg");
 
@@ -218,8 +251,6 @@ void gcodeMove(u32 cmd_argc, const char **cmd_argv)
   /* Verificar si los ángulos generados están dentro del rango. */
   if (isnan(shoulder) || isnan(elbow))
     return;
-  r_shoulder = map(shoulder, 125, 90, 0, 35);
-  r_elbow = map(elbow, 0, 20, 190, 210);
   /* Mover brazo robótico. */
   servoMove(&g_shoulderServoInfo, r_shoulder);
   servoMove(&g_elbowServoInfo, r_elbow);
@@ -243,8 +274,6 @@ void dCodeMove(u32 cmd_argc, const char **cmd_argv)
     *val = strtod(cmd_argv[i] + 1, NULL);
   }
   /* Verificar si los ángulos generados están dentro del rango. */
-  r_shoulder = map(shoulder, 125, 90, 0, 35);
-  r_elbow = map(elbow, 0, 20, 190, 210);
   /* Mover brazo robótico. */
   servoMove(&g_shoulderServoInfo, r_shoulder);
   servoMove(&g_elbowServoInfo, r_elbow);
